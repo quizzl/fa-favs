@@ -1,6 +1,7 @@
 import { fetch } from 'whatwg-fetch';
 import { Map, Set } from 'immutable';
 import { EMPTY, from, merge, of } from 'rxjs';
+import Q from 'q';
 import { concatMap, delay, concat, map, reduce, mergeMap, publish } from 'rxjs/operators';
 
 // used to limit per user, but no point if we expect just one window
@@ -93,8 +94,32 @@ function get_all_favs(users, iter = 0) {
 	// });
 }
 
+function flag_visited_(user, prev_favs) {
+	const keys = {};
+	keys[user] = JSON.stringify(prev_favs.map(f => Object.assign(f, { visited: true })));
+	return browser.storage.local.set(keys);
+}
+export function flag_visited(user) {
+	return browser.storage.local.get(user)
+		.then(r => {
+			if(user !== null) {
+				if(r.hasOwnProperty(user))
+					flag_visited_(user, JSON.parse(r[user]))
+			}
+			else {
+				const P_users = [];
+				for(const k in Object.keys(r)) {
+					if(r.hasOwnProperty(k)) {
+						P_users.push(flag_visited_(k, JSON.parse(r[k])));
+					}
+				}
+				return Q.all(P_users);
+			}
+		});
+}
+
 export function get_favs(keys = null) {
-	return browser.storage.local.get(keys).then(store => Map([['Feve', []]]).withMutations(users => {
+	return browser.storage.local.get(keys).then(store => Map().withMutations(users => {
 			for(const k of Object.keys(store)) {
 				if(store.hasOwnProperty(k)) {
 					const raw_favs = JSON.parse(store[k]);
