@@ -1,0 +1,20 @@
+{
+	"manifest_version": 2,
+	"name": "FAF",
+	"version": "0.0.1",
+	"permissions": ["*://*.furaffinity.net/*", "activeTab", "storage", "unlimitedStorage"],
+	"browser_action": {
+		"default_title": "FAF",
+		"default_icon": "icon.png"
+	},
+	"background": {
+		"scripts": ["bg/tab.js"]
+	},
+	"commands": {
+		"_execute_browser_action": {
+			"suggested_key": {
+				"default": "Ctrl+F"
+			}
+		}
+	}
+}
