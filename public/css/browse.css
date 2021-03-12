@@ -3,6 +3,7 @@ body, html {
 	width:100%;
 	height:100%;
 	font-family:sans-serif;
+	font-size:0.94em;
 }
 ul {
 	list-style-type:none;
@@ -14,8 +15,6 @@ ul {
 	margin:0;
 }
 .list-separator {
-	border-top:#AAA solid 1px;
-	
 }
 
 .alpha_hidden {
@@ -41,11 +40,32 @@ ul {
 	}
 
 	#main_logotext {
-		display:inline-block;
+		margin:1em;
 	}
+		#main_logo {
+			display:block;
+			background-repeat:no-repeat;
+			background-position:center;
+			background-size:contain;
+			height:1.6em;
+		}
 	#user_head {
 		display:inline-block;
+		padding:0.5em 1em;
+		margin:0.5em 0;
+		font-size:1.8em;
 	}
+		#sortby_wrapper {
+			display:inline-block;
+			margin:0 1em;
+			font-size:1.2em;
+		}
+			#sortby_select {
+				margin:0 0.3em;
+				font-size:inherit;
+				color:inherit;
+			}
+		
 	#user_select_pane {
 		width:15%;
 		min-width:200px;
@@ -64,25 +84,30 @@ ul {
 				cursor:pointer;
 			}
 			#user_select > li.selected {
-				background-color:#EEE;
-				cursor:normal;
+				cursor:auto;
+				font-weight:bold;
 			}
 				.new-count, .remove-user {
 					float:right;
-					margin:0 0.4em;
+					padding:0 0.4em;
+					font-size:1.3em;
+					font-weight:bold;
+					text-decoration:none;
 				}
 				.new-count {
-					height:2em;
-					margin-top:-0.35em;
+					height:2.2em;
+					margin:-0.35em 1em 0 0;
 					padding:0.5em;
+					margin-left:1em;
 					min-width:1em;
 					text-align:center;
 					font-size:0.8em;
-					border-radius:1em;
+					border-radius:1.1em;
 					box-sizing:border-box;
-				}
-				.new-count.nonzero {
-					background-color:#a9871d;
+					
+					text-shadow:0 0.2em 0.1em #a98514;
+					background-color:#c69d1f;
+					border:#a98514 solid 2px;
 					font-weight:bold;
 					color:#FFF;
 				}
@@ -107,7 +132,6 @@ ul {
 							#user_add_button {
 								border:none;
 								background:none;
-								background-color:#AAA;
 								outline:none;
 								height:1.7em;
 								width:1.7em;
@@ -134,18 +158,24 @@ ul {
 		.pagination-post-count {
 			font-size:0.8em;
 		}
-	#post_pane .pagination-container {
-		padding:1em 0;
+	#post_pane header {
 	}
-		#post_pane .pagination-list {
-			width:50%;
-			display:flex;
-			margin:0 auto;
+		#post_pane header h2 {
+			display:inline-block;
 		}
-			#post_pane .pagination-list > li {
-				flex:1;
-				text-align:center;
+		#post_pane .pagination-container {
+			padding:1em 0;
+		}
+			#post_pane .pagination-list {
+				width:50%;
+				display:flex;
+				margin:0 auto;
 			}
+				#post_pane .pagination-list > li {
+					flex:1;
+					text-align:center;
+				}
+				
 	.pagination-container .page-arrow {
 		cursor:pointer;
 	}
@@ -163,6 +193,7 @@ ul {
 			overflow-y:scroll;
 			flex:1;
 			position:relative;
+			text-align:center;
 		}
 			#no_favs_pane_filler {
 				left:0;
@@ -171,7 +202,6 @@ ul {
 				position:relative;
 				height:2em;
 				font-size:1.4em;
-				color:#AAA;
 				font-weight:bold;
 				text-align:center;
 			}
@@ -179,15 +209,29 @@ ul {
 					margin-top:-1em;
 				}
 			#post_list > li {
-				width:256px;
-				margin:0.4em;
+				width:200px;
+				margin:0.5em;
 				vertical-align:middle;
 			}
 			/*.postcard {
 				border:#DDD solid 1px;
 			}*/
-			.postcard.unvisited {
-				border-top:#a9871d solid 3px;
+			.postcard {
+				position:relative;
+			}
+			.postcard.unvisited h3::before {
+				content:" ";
+				display:inline-block;
+				
+				width:0.5em;
+				height:0.5em;
+				display:inline-block;
+				vertical-align:middle;
+				border-radius:50%;
+				background-color:#c69d1f;
+				border:#a98514 solid 2px;
+				position:relative;
+				left:-1em;
 			}
 			.postcard.unvisited * {
 				font-weight:bold !important;
@@ -200,6 +244,7 @@ ul {
 					.postcard .postcard-thumb {
 						max-width:100%;
 						max-height:200px;
+						box-shadow:0 2px 5px rgba(0, 0, 0, 0.2);
 					}
 					
 					.postcard.postcard-adult .postcard-thumb {
@@ -241,8 +286,6 @@ ul {
   height: 0;
   margin: 2px;
   box-sizing: border-box;
-  border: 8px solid #AAA;
-  border-color: #AAA transparent #AAA transparent;
   animation: lds-hourglass 1.2s infinite;
 }
 @keyframes lds-hourglass {

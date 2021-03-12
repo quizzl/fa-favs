@@ -45,7 +45,7 @@ function favs_append(u, favs) {
 			const prev_favs = r.hasOwnProperty(u) ? JSON.parse(r[u]) : [];
 			const next_favs = Map(favs.concat(prev_favs).map(f => [f.fav_id, f])).valueSeq().toArray(); // dedupe with Map, favor existing entries
 			keys[u] = JSON.stringify(next_favs);
-			const done = next_favs.length < prev_favs.length + favs.length || !r.hasOwnProperty(u);
+			const done = next_favs.length < prev_favs.length + favs.length; // || !r.hasOwnProperty(u);
 			// console.log(next_favs.length < prev_favs.length + favs.length, !r.hasOwnProperty(u));
 			return browser.storage.local.set(keys).then(_ => done)
 		})
