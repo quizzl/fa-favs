@@ -1,0 +1,87 @@
+body, html {
+	color:#CFD3EB;
+	background-color:#353B45;
+}
+
+a {
+	color:#1a94bf;
+}
+a:visited {
+	color:#136a95;
+}
+
+.pseudobutton {
+	border-color:rgba(255, 255, 255, 0.1);
+}
+.pseudobutton:hover {
+	border-color:rgba(255, 255, 255, 0.14);
+	background-color:rgba(0, 0, 0, 0.14);
+}
+
+.list-separator {
+	border-top:#474e5a solid 1px;
+}
+
+#main_logo {
+	background-image:url(../../img/logo-dark.png);
+}
+#user_head {
+	border-right:#5c6779 solid 1px;
+}
+
+#user_select_pane {
+	/*border-right:#CCC solid 1px;*/
+}
+#user_select > li.user-item:hover {
+	background-color:#2d333d;
+}
+#user_select > li.selected, #user_select > li.selected:hover {
+	background-color:#282e39;
+}
+.remove-user:hover {
+	background-color:#161616;
+}
+
+#user_add_input {
+	border:none;
+	border-top:#161616 solid 1px;
+	border-bottom:#161616 solid 1px;
+	background-color:#1B1B1D;
+	color:#CFD3EB;
+}
+	#user_add_button {
+		color:#FFF;
+	}
+
+#post_pane header {
+	/*border-bottom:#E4E4E4 solid 1px;*/
+	background-color:#282f39;
+}
+#post_list_wrapper {
+	background-color:#20242A;
+	color:#9c9ead;
+}
+#post_pane .pagination-container {
+	/*border-top:#E4E4E4 solid 1px;*/
+	background-color:#282f39;
+}
+.page-arrow:hover {
+	background-color:#1d2127;
+}
+	.page-arrow.disabled:hover {
+		background-color:transparent;
+	}
+#no_favs_pane_filler {
+	color:#5c5c5c;
+}
+#sortby_wrapper {
+	color:#868686;
+}
+#theme_toggle {
+	background-color:#2e3540;
+}
+
+.lds-hourglass:after {
+  border: 8px solid #868686;
+  border-color: #868686 transparent #868686 transparent;
+}

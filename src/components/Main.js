@@ -70,7 +70,7 @@ export default class extends Component {
 		}
 		
 		if(prevState.theme !== this.state.theme) {
-			document.getElementById('theme_style').href = `css/browse/${this.state.theme.value}.css`;
+			document.getElementById('theme_style').href = `css/browse/${this.state.theme.stylesheet}`;
 			
 			const keys = {};
 			keys[`${SETTINGS_KEY_PREFIX}_THEME`] = this.state.theme.value;
