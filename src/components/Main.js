@@ -4,21 +4,8 @@ import PostCard from './PostCard';
 import Q from 'q';
 import { Map, Set } from 'immutable'
 import { get_favs, update_favs, flag_visited, remove_user } from '../fetch'
+import { SETTINGS_KEY_PREFIX, UI_PAGE_SIZE, SORTBY, THEME } from '../consts'
 
-/*
-TODO
-
-- Pagination
-- Debug uniqueness
-- Store-state source of truth
-- CSS
-*/
-
-const UI_PAGE_SIZE = 48; // page size for this UI, match FA to curb rate limiting
-const SORTBY = {
-	NEW: { value: 'new', pretty: 'Newest first' },
-	UNVIEWED: { value: 'unviewed', pretty: 'Unviewed first' }
-};
 export default class extends Component {
 	constructor(props) {
 		super(props);
@@ -30,7 +17,8 @@ export default class extends Component {
 			page: 0,
 			store_reloads: 0,
 			pulling_: false,
-			sortby: SORTBY.NEW.value
+			sortby: SORTBY.NEW,
+			theme: THEME.DARK
 		};
 		this.username_ref = createRef();
 	}
@@ -42,7 +30,16 @@ export default class extends Component {
 	componentDidMount() {
 		this.trig_store_reload().then(_ => this.pull_all());
 		this.username_ref.current.focus();
+		this.load_settings();
 	}
+	
+	load_settings() {
+		browser.storage.local.get(`${SETTINGS_KEY_PREFIX}_THEME`).then(s => {
+			if(s.hasOwnProperty(`${SETTINGS_KEY_PREFIX}_THEME`))
+				this.setState({ theme: THEME[s[`${SETTINGS_KEY_PREFIX}_THEME`]] });
+		})
+	}
+	
 	pull_all() {
 		this.setState({ pulling_: true });
 		return get_favs().then(favs => update_favs(favs.keySeq().toArray()).subscribe( // .concat(["Feve", "Kenket"])
@@ -70,6 +67,13 @@ export default class extends Component {
 			console.log(prevState.selected, this.state.selected);
 			// flush the changes to the UI only when we switch users, so that posts for a user are frozen while you page through them so they come in a consistent order
 			this.trig_store_reload(prevState.selected);
+		}
+		if(prevState.theme !== this.state.theme) {
+			document.getElementById('theme_style').href = `css/browse/${this.state.theme.value}.css`;
+			
+			const keys = {};
+			keys[`${SETTINGS_KEY_PREFIX}_THEME`] = this.state.theme.value;
+			browser.storage.local.set(keys);
 		}
 	}
 	
@@ -106,15 +110,15 @@ export default class extends Component {
 		return false;
 	}
 	
-	handleSortByChange = e => {
-		this.setState({ sortby: e.target.value });
-	}
+	handleSortByChange = e => this.setState({ sortby: SORTBY[e.target.value], page: 0 });
 	
 	handlePageTurn = d => this.setState(s => {
 		const page_ = s.page + d;
 		const num_posts = this.get_current_posts()[0].length;
 		return { page: Math.max(0, Math.min(parseInt((num_posts - 1) / UI_PAGE_SIZE), page_)) };
 	});
+	
+	handleThemeChange = _e => this.setState({ theme: THEME[this.state.theme.next] })
 	
 	get_current_posts() {
 		const all_posts = (
@@ -125,9 +129,9 @@ export default class extends Component {
 			)
 			.sort((a, b) => {
 				switch(this.state.sortby) {
-					case SORTBY.NEW.value:
+					case SORTBY.NEW:
 						return b.fav_id - a.fav_id;
-					case SORTBY.UNVIEWED.value:
+					case SORTBY.UNVIEWED:
 						return b.visited === a.visited ? b.fav_id - a.fav_id : (b.visited ? -1 : 1);
 				}
 			})
@@ -163,6 +167,10 @@ export default class extends Component {
 									</li>
 								])}
 						</ul>
+						<div id="theme_toggle" onClick={this.handleThemeChange}>
+							<div>Click to toggle from:</div>
+							<h2>{this.state.theme.pretty}</h2>
+						</div>
 					</nav>
 					<section id="post_pane">
 						<header>
@@ -174,7 +182,7 @@ export default class extends Component {
 							}</h2>
 							<span id="sortby_wrapper">
 								<label for="sortby_select">Sort by:</label>
-								<select id="sortby_select" value={this.state.sortby} onChange={this.handleSortByChange}>
+								<select id="sortby_select" value={this.state.sortby.value} onChange={this.handleSortByChange}>
 									{Object.values(SORTBY).map(v => <option value={v.value}>{v.pretty}</option>)}
 								</select>
 							</span>

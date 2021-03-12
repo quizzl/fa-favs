@@ -3,11 +3,9 @@ import { Map, Set } from 'immutable';
 import { EMPTY, from, merge, of } from 'rxjs';
 import Q from 'q';
 import { concatMap, delay, concat, map, reduce, mergeMap, publish } from 'rxjs/operators';
+import { TOTAL_RATE_LIMIT, PER_USER_POST_LIMIT, PAGE_LIMIT, SETTINGS_KEY_PREFIX } from './consts'
 
 // used to limit per user, but no point if we expect just one window
-const TOTAL_RATE_LIMIT = 2E3; // limit the total update loop rate (ms)
-const PER_USER_POST_LIMIT = 1000; // limit num posts per user for space
-const PAGE_LIMIT = 2; // max # pages to search for catchup
 function get_user_favs(user, page) {
 	return fetch(`https://www.furaffinity.net/favorites/${user}/${page === null ? '' : `${page}/next/`}`).then(s => s.text())
 			.then(t => {
@@ -45,7 +43,7 @@ function favs_append(u, favs) {
 			const prev_favs = r.hasOwnProperty(u) ? JSON.parse(r[u]) : [];
 			const next_favs = Map(favs.concat(prev_favs).map(f => [f.fav_id, f])).valueSeq().toArray(); // dedupe with Map, favor existing entries
 			keys[u] = JSON.stringify(next_favs);
-			const done = next_favs.length < prev_favs.length + favs.length; // || !r.hasOwnProperty(u);
+			const done = next_favs.length < prev_favs.length + favs.length || !r.hasOwnProperty(u);
 			// console.log(next_favs.length < prev_favs.length + favs.length, !r.hasOwnProperty(u));
 			return browser.storage.local.set(keys).then(_ => done)
 		})
@@ -114,7 +112,7 @@ export function flag_visited(user, viewed_favs) {
 			else {
 				const P_users = [];
 				for(const k of Object.keys(r)) {
-					if(r.hasOwnProperty(k)) {
+					if(r.hasOwnProperty(k) && k.indexOf(SETTINGS_KEY_PREFIX) === -1) {
 						P_users.push(flag_visited_(k, JSON.parse(r[k]), viewed_favs));
 					}
 				}
@@ -130,7 +128,7 @@ export function remove_user(user) {
 export function get_favs(keys = null) {
 	return browser.storage.local.get(keys).then(store => Map().withMutations(users => {
 			for(const k of Object.keys(store)) {
-				if(store.hasOwnProperty(k)) {
+				if(store.hasOwnProperty(k) && k.indexOf(SETTINGS_KEY_PREFIX) === -1) {
 					const raw_favs = JSON.parse(store[k]);
 					const unique_favs = Map(raw_favs.map(f => [f.fav_id, f])).valueSeq().toArray(); // unique favs per user (not overall, although maybe consolidate... consider it.)
 					users.set(k, unique_favs);

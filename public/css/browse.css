@@ -144,7 +144,16 @@ ul {
 									font-weight:bold;
 								}
 				
-
+			#theme_toggle {
+				padding:1em 0;
+				text-align:center;
+				cursor:pointer;
+				font-size:0.7em;
+			}
+				#theme_toggle h2 {
+					text-transform:capitalize;
+					margin:0.6em 0;
+				}
 	.pagination-list {
 		display:inline-block;
 	}
