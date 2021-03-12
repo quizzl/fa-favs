@@ -68,6 +68,7 @@ export default class extends Component {
 			// flush the changes to the UI only when we switch users, so that posts for a user are frozen while you page through them so they come in a consistent order
 			this.trig_store_reload(prevState.selected);
 		}
+		
 		if(prevState.theme !== this.state.theme) {
 			document.getElementById('theme_style').href = `css/browse/${this.state.theme.value}.css`;
 			
@@ -117,6 +118,11 @@ export default class extends Component {
 		const num_posts = this.get_current_posts()[0].length;
 		return { page: Math.max(0, Math.min(parseInt((num_posts - 1) / UI_PAGE_SIZE), page_)) };
 	});
+	
+	handleFlagAllViewed = _e => {
+		const selected = this.state.selected
+		flag_visited(selected).then(_ => this.trig_store_reload(selected))
+	}
 	
 	handleThemeChange = _e => this.setState({ theme: THEME[this.state.theme.next] })
 	
@@ -180,6 +186,7 @@ export default class extends Component {
 							} {
 								new_posts.length > 0 && <span className="new-count">{`${new_posts.length} unviewed`}</span>
 							}</h2>
+							<span className="pseudobutton" onClick={this.handleFlagAllViewed}>Mark all as viewed</span>
 							<span id="sortby_wrapper">
 								<label for="sortby_select">Sort by:</label>
 								<select id="sortby_select" value={this.state.sortby.value} onChange={this.handleSortByChange}>

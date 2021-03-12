@@ -21,6 +21,13 @@ ul {
 	opacity:0 !important;
 }
 
+.pseudobutton {
+	cursor:pointer;
+	padding:0.6em;
+	border-width:1px;
+	border-style:solid;
+}
+
 #main_root {
 	display:flex;
 	flex-direction:column;
@@ -55,16 +62,24 @@ ul {
 		margin:0.5em 0;
 		font-size:1.8em;
 	}
-		#sortby_wrapper {
+		#user_head > * {
 			display:inline-block;
-			margin:0 1em;
-			font-size:1.2em;
+			vertical-align: middle;
 		}
-			#sortby_select {
-				margin:0 0.3em;
-				font-size:inherit;
-				color:inherit;
-			}
+		#user_head > .new-count {
+			font-size:0.6em;
+			margin-left:1em;
+		}
+		
+	#sortby_wrapper {
+		display:inline-block;
+		margin:0 1em;
+	}
+		#sortby_select {
+			margin:0 0.3em;
+			font-size:inherit;
+			color:inherit;
+		}
 		
 	#user_select_pane {
 		width:15%;
@@ -88,17 +103,18 @@ ul {
 				font-weight:bold;
 			}
 				.new-count, .remove-user {
-					float:right;
 					padding:0 0.4em;
 					font-size:1.3em;
 					font-weight:bold;
 					text-decoration:none;
 				}
+				#user_select .new-count, #user_select .remove-user {
+					float:right;
+				}
 				.new-count {
 					height:2.2em;
-					margin:-0.35em 1em 0 0;
+					margin-top:-0.35em;
 					padding:0.5em;
-					margin-left:1em;
 					min-width:1em;
 					text-align:center;
 					font-size:0.8em;
@@ -154,44 +170,23 @@ ul {
 					text-transform:capitalize;
 					margin:0.6em 0;
 				}
-	.pagination-list {
-		display:inline-block;
-	}
-		.page-arrow {
-			font-size:2em;
-			font-weight:bold;
-		}
-		.pagination-page-count {
-			font-weight:bold;
-		}
-		.pagination-post-count {
-			font-size:0.8em;
-		}
 	#post_pane header {
+		font-size:1.2em;
 	}
 		#post_pane header h2 {
+			font-size:1.5em;
+		}
+		#post_pane header > *:first-child {
+			margin-left:0;
+		}
+		#post_pane header > *:last-child {
+			margin-right:0;
+		}
+		#post_pane header > * {
+			margin:0 1em;
+			vertical-align:middle;
 			display:inline-block;
 		}
-		#post_pane .pagination-container {
-			padding:1em 0;
-		}
-			#post_pane .pagination-list {
-				width:50%;
-				display:flex;
-				margin:0 auto;
-			}
-				#post_pane .pagination-list > li {
-					flex:1;
-					text-align:center;
-				}
-				
-	.pagination-container .page-arrow {
-		cursor:pointer;
-	}
-	.pagination-container .page-arrow.disabled {
-		opacity:0.4;
-		cursor:default;
-	}
 	
 	#post_pane {
 		display:flex;
@@ -279,6 +274,38 @@ ul {
 					.postcard h5 {
 						font-size:0.8em;
 					}
+		
+		#post_pane .pagination-container {
+			padding:1em 0;
+		}
+			#post_pane .pagination-list {
+				width:50%;
+				display:flex;
+				margin:0 auto;
+			}
+				#post_pane .pagination-list > li {
+					flex:1;
+					text-align:center;
+				}
+				
+	.pagination-list {
+		display:inline-block;
+	}
+		.page-arrow {
+			font-size:2em;
+			font-weight:bold;
+		cursor:pointer;
+		}
+		.pagination-container .page-arrow.disabled {
+			opacity:0.4;
+			cursor:default;
+		}
+		.pagination-page-count {
+			font-weight:bold;
+		}
+		.pagination-post-count {
+			font-size:0.8em;
+		}
 
 
 .lds-hourglass {

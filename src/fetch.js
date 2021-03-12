@@ -97,8 +97,8 @@ function get_all_favs(users, iter = 0) {
 
 function flag_visited_(user, prev_favs, viewed_favs) {
 	const keys = {};
-	const viewed_fav_ids = Set(viewed_favs.map(f => f.fav_id));
-	keys[user] = JSON.stringify(prev_favs.map(f => Object.assign(f, { visited: f.visited || viewed_fav_ids.has(f.fav_id) })));
+	const viewed_fav_ids = Set((viewed_favs || []).map(f => f.fav_id));
+	keys[user] = JSON.stringify(prev_favs.map(f => Object.assign(f, { visited: f.visited || viewed_favs === undefined || viewed_fav_ids.has(f.fav_id) })));
 	return browser.storage.local.set(keys);
 }
 
