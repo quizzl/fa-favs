@@ -12,6 +12,9 @@ function get_user_favs(user, page) {
 	return fetch(`https://www.furaffinity.net/favorites/${user}/${page === null ? '' : `${page}/next/`}`).then(s => s.text())
 			.then(t => {
 				const dom = new DOMParser().parseFromString(t, 'text/html');
+				const baseEl = dom.createElement('base');
+				baseEl.setAttribute('href', 'https://furaffinity.net');
+				dom.head.append(baseEl); // thanks Christos Lytras @https://stackoverflow.com/a/55606029/3925507
 				return Array.from(dom.querySelectorAll('#gallery-favorites > figure')).map(fig => {
 					const id = parseInt(fig.id.match(/^sid\-(\d+)$/i)[1]);
 					const fav_id = parseInt(fig.getAttribute('data-fav-id'));
@@ -42,7 +45,7 @@ function favs_append(u, favs) {
 			const prev_favs = r.hasOwnProperty(u) ? JSON.parse(r[u]) : [];
 			const next_favs = Map(favs.concat(prev_favs).map(f => [f.fav_id, f])).valueSeq().toArray(); // dedupe with Map, favor existing entries
 			keys[u] = JSON.stringify(next_favs);
-			const done = next_favs.length < prev_favs.length + favs.length; // || !r.hasOwnProperty(u);
+			const done = next_favs.length < prev_favs.length + favs.length || !r.hasOwnProperty(u);
 			// console.log(next_favs.length < prev_favs.length + favs.length, !r.hasOwnProperty(u));
 			return browser.storage.local.set(keys).then(_ => done)
 		})

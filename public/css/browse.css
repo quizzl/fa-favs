@@ -195,7 +195,19 @@ ul {
 			
 				.postcard > figure {
 					margin:0;
+					text-align:center;
 				}
+					.postcard .postcard-thumb {
+						max-width:100%;
+						max-height:200px;
+					}
+					
+					.postcard.postcard-adult .postcard-thumb {
+						border:#cf3a2f solid 1px;
+					}
+					.postcard.postcard-mature .postcard-thumb {
+						border:#2fa6cf solid 1px;
+					}
 				.postcard > figcaption {
 					padding:1em;
 				}
