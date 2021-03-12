@@ -51,9 +51,9 @@ export default class extends Component {
 		// all actions that result in reading posts
 		if(
 			!this.state.pulling_ && (
-					(this.state.page !== prevState.page) ||
-					(prevState.selected !== this.state.selected) ||
-					(this.state.user_favs !== prevState.user_favs)
+					(this.state.page !== prevState.page)
+					|| (prevState.selected !== this.state.selected)
+					// || (this.state.user_favs !== prevState.user_favs)
 				)
 			) {
 			// log the current page of posts as read
@@ -61,6 +61,7 @@ export default class extends Component {
 			flag_visited(this.state.selected, paged_posts);
 		}
 		if(prevState.selected !== this.state.selected) {
+			console.log(prevState.selected, this.state.selected);
 			// flush the changes to the UI only when we switch users, so that posts for a user are frozen while you page through them so they come in a consistent order
 			this.trig_store_reload(prevState.selected);
 		}
@@ -87,13 +88,16 @@ export default class extends Component {
 	
 	handleUsernameChange = e => this.setState({ username: e.target.value })
 	
-	handleUserRemove = (_e, user) => {
+	handleUserRemove = (e, user) => {
+		e.preventDefault();
+		e.stopPropagation();
 		if(confirm(`Remove user ${user}?`)) {
 			remove_user(user).then(_ => this.setState(s => ({
 				selected: s.selected === user ? null : s.selected,
 				user_favs: s.user_favs.remove(user) // debating between this hack and making a more general diff thing for trig_store_reload
 			})))
 		}
+		return false;
 	}
 	
 	handlePageTurn = d => this.setState(s => {
@@ -116,6 +120,7 @@ export default class extends Component {
 	
 	render() {
 		const [all_posts, paged_posts] = this.get_current_posts();
+		const new_posts = all_posts.filter(p => !p.visited);
 		return <div id="main_root">
 				<header>
 					<h1 id="main_logotext"><span id="main_logo"></span>FA Favs</h1>
@@ -130,9 +135,10 @@ export default class extends Component {
 							</form>
 						</div>
 						<ul id="user_select">
-							<li key={0} className={`${this.state.selected === null ? 'selected' : ''}`} onClick={_ => this.handleUserSelect(null)}>All users</li>
+							<li key={0} className={`user-item ${this.state.selected === null ? 'selected' : ''}`} onClick={_ => this.handleUserSelect(null)}>All users</li>
+							<li className="list-separator"></li>
 							{this.state.user_favs.entrySeq().sortBy(([k, _v]) => k).toArray().map(([u, posts], i) =>
-								<li key={u} className={`${this.state.selected === u ? 'selected' : ''}`} onClick={_ => this.handleUserSelect(u)}>
+								<li key={u} className={`user-item ${this.state.selected === u ? 'selected' : ''}`} onClick={_ => this.handleUserSelect(u)}>
 									<span className="username">{u}</span>
 									<a href="#" className="remove-user" onClick={e => this.handleUserRemove(e, u)}>&times;</a>
 									<span className={`new-count ${posts.filter(p => !p.visited).length > 0 ? 'nonzero' : ''}`}>{
@@ -146,20 +152,11 @@ export default class extends Component {
 							<h2 id="user_head">{this.state.selected === null
 								? 'All users'
 								: <span><a href={`//furaffinity.net/favorites/${this.state.selected}`} target="_blank">{this.state.selected}</a>'s favorites</span>
+							} {
+								<span className={`new-count ${new_posts.length > 0 ? 'nonzero' : ''}`}>{
+									new_posts.length > 0 ? `${new_posts.length} new` : ''
+								}</span>
 							}</h2>
-							{
-								all_posts.length === 0
-									? null
-									: <span className="pagination-container">
-										<ul className="flatlist pagination-list">
-											<li className={`page-arrow ${this.state.page === 0 ? 'disabled' : ''}`} onClick={e => this.handlePageTurn(-Infinity)}>&#8606;</li>
-											<li className={`page-arrow ${this.state.page === 0 ? 'disabled' : ''}`} onClick={e => this.handlePageTurn(-1)}>&larr;</li>
-											<li>Page {this.state.page + 1} / {parseInt(all_posts.length / UI_PAGE_SIZE)} ({this.state.page * UI_PAGE_SIZE + 1} &ndash; {Math.min(all_posts.length, (this.state.page + 1) * UI_PAGE_SIZE)} of {all_posts.length})</li>
-											<li className={`page-arrow ${this.state.page >= parseInt((all_posts.length - 1) / UI_PAGE_SIZE) ? 'disabled' : ''}`} onClick={e => this.handlePageTurn(1)}>&rarr;</li>
-											<li className={`page-arrow ${this.state.page >= parseInt((all_posts.length - 1) / UI_PAGE_SIZE) ? 'disabled' : ''}`} onClick={e => this.handlePageTurn(Infinity)}>&#8608;</li>
-										</ul>
-									</span>
-							}
 						</header>
 						<div id="post_list_wrapper">
 							{ all_posts.length === 0
@@ -170,6 +167,22 @@ export default class extends Component {
 										</li>)}
 									</ul>
 							}
+						</div>
+						<div className="pagination-container">
+							<ul className="flatlist pagination-list">
+								<li className={`page-arrow ${this.state.page === 0 ? 'disabled' : ''}`} onClick={e => this.handlePageTurn(-Infinity)}>&#8606;</li>
+								<li className={`page-arrow ${this.state.page === 0 ? 'disabled' : ''}`} onClick={e => this.handlePageTurn(-1)}>&larr;</li>
+								<li>{
+									all_posts.length === 0
+										? null
+										: <span>
+											<div className="pagination-page-count">Page {this.state.page + 1} / {parseInt(all_posts.length / UI_PAGE_SIZE)}</div>
+											<div className="pagination-post-count">({this.state.page * UI_PAGE_SIZE + 1} &ndash; {Math.min(all_posts.length, (this.state.page + 1) * UI_PAGE_SIZE)} of {all_posts.length})</div>
+										</span>
+								}</li>
+								<li className={`page-arrow ${this.state.page >= parseInt((all_posts.length - 1) / UI_PAGE_SIZE) ? 'disabled' : ''}`} onClick={e => this.handlePageTurn(1)}>&rarr;</li>
+								<li className={`page-arrow ${this.state.page >= parseInt((all_posts.length - 1) / UI_PAGE_SIZE) ? 'disabled' : ''}`} onClick={e => this.handlePageTurn(Infinity)}>&#8608;</li>
+							</ul>
 						</div>
 					</section>
 				</div>
