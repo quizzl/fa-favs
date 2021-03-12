@@ -24,8 +24,7 @@ function get_user_favs(user, page) {
 						else
 							return thumb;
 					})();
-					const title_el = fig.querySelector('figcaption a').innerText;
-					const title = title_el.innerText;
+					const title = fig.querySelector('figcaption a').innerText;
 					return {
 						id, fav_id, rating, thumb, title, artist,
 						fetch_date: Date.now(),
@@ -57,7 +56,7 @@ function get_all_favs(users, iter = 0) {
 	// 		).toArray());
 	const updater$ = from(users)
 		.pipe(
-				concatMap(x => of(x).pipe(delay(TOTAL_RATE_LIMIT))), // TODO not very sophisticated, e.g. if we had multiple instances running; really we want a global rate limit based on a last_updated in webstorage. might get around to it.
+				concatMap((x, i) => i > 0 ? of(x).pipe(delay(TOTAL_RATE_LIMIT)) : of(x)), // TODO not very sophisticated, e.g. if we had multiple instances running; really we want a global rate limit based on a last_updated in webstorage. might get around to it.
 				mergeMap(([u, page]) =>
 					get_user_favs(u, page).then(next_favs => favs_append(u, next_favs).then(done => [u, done, next_favs[next_favs.length - 1]]))
 				)
@@ -99,6 +98,7 @@ function flag_visited_(user, prev_favs) {
 	keys[user] = JSON.stringify(prev_favs.map(f => Object.assign(f, { visited: true })));
 	return browser.storage.local.set(keys);
 }
+
 export function flag_visited(user) {
 	return browser.storage.local.get(user)
 		.then(r => {
@@ -116,6 +116,10 @@ export function flag_visited(user) {
 				return Q.all(P_users);
 			}
 		});
+}
+
+export function remove_user(user) {
+	return browser.storage.local.remove(user);
 }
 
 export function get_favs(keys = null) {
