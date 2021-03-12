@@ -14,12 +14,20 @@ ul {
 	margin:0;
 }
 
+.alpha_hidden {
+	opacity:0 !important;
+}
+
 #main_root {
 	display:flex;
 	flex-direction:column;
 	height:100%;
 	min-height:0; /* needed for constaining the inner scroll box (thanks https://moduscreate.com/blog/how-to-fix-overflow-issues-in-css-flex-layouts/) */
 }
+	#head_status {
+		transition:all 0.3s ease;
+		opacity:1;
+	}
 	#flexroot {
 		display:flex;
 		flex-direction:row;
@@ -36,20 +44,40 @@ ul {
 	#user_select_pane {
 		width:15%;
 		min-width:200px;
+		display:flex;
+		flex-direction:column;
 	}
 		#user_select {
 			margin:0;
 			padding:0;
+			flex:1;
+			overflow-y:scroll;
 		}
 			#user_select > li {
 				margin:0;
 				padding:1em;
+				cursor:pointer;
 			}
 			#user_select > li.selected {
 				background-color:#EEE;
+				cursor:normal;
 			}
-				.new-count {
+				.new-count, .remove-user {
 					float:right;
+					margin:0 0.4em;
+				}
+				.new-count {
+					margin-top:-0.5em;
+					padding:0.5em;
+					min-width:1em;
+					text-align:center;
+					font-size:0.8em;
+					border-radius:50%;
+				}
+				.new-count.nonzero {
+					background-color:#a9871d;
+					font-weight:bold;
+					color:#FFF;
 				}
 				#user_add_item {
 					position:relative;
@@ -103,17 +131,89 @@ ul {
 		flex:1;
 	}
 		#post_list_wrapper {
-			overflow:scroll;
+			overflow-y:scroll;
 			flex:1;
+			position:relative;
 		}
+			#no_favs_pane_filler {
+				left:0;
+				right:0;
+				top:50%;
+				position:relative;
+				height:2em;
+				font-size:1.4em;
+				color:#AAA;
+				font-weight:bold;
+				text-align:center;
+			}
+				#no_favs_pane_filler > span {
+					margin-top:-1em;
+				}
 			#post_list > li {
 				width:256px;
-				margin:1em;
+				margin:0.4em;
 				vertical-align:middle;
 			}
-				.postcard h3, .postcard h4, .postcard h5 {
-					margin:0.4em;
+			/*.postcard {
+				border:#DDD solid 1px;
+			}*/
+			.postcard.unvisited {
+				border-top:#a9871d solid 3px;
+			}
+			.postcard.unvisited * {
+				font-weight:bold !important;
+			}
+			
+				.postcard > figure {
+					margin:0;
 				}
-				.postcard h3 {
-					text-align:center;
+				.postcard > figcaption {
+					padding:1em;
 				}
+					.postcard h3, .postcard h4, .postcard h5 {
+						margin:0.4em 0;
+						font-weight:normal;
+					}
+					.postcard h3 {
+						font-size:1.2em;
+						text-align:center;
+					}
+					.postcard h4 {
+						font-size:1.0em;
+					}
+					.postcard h5 {
+						font-size:0.8em;
+					}
+
+
+.lds-hourglass {
+  display: inline-block;
+  position: relative;
+  width: 16px;
+  height: 16px;
+}
+.lds-hourglass:after {
+  content: " ";
+  display: block;
+  border-radius: 50%;
+  width: 0;
+  height: 0;
+  margin: 2px;
+  box-sizing: border-box;
+  border: 8px solid #AAA;
+  border-color: #AAA transparent #AAA transparent;
+  animation: lds-hourglass 1.2s infinite;
+}
+@keyframes lds-hourglass {
+  0% {
+    transform: rotate(0);
+    animation-timing-function: cubic-bezier(0.55, 0.055, 0.675, 0.19);
+  }
+  50% {
+    transform: rotate(360deg);
+    animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
+  }
+  100% {
+    transform: rotate(720deg);
+  }
+}

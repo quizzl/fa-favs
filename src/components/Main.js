@@ -1,4 +1,4 @@
-import { h, Component } from 'preact';
+import { h, Component, createRef } from 'preact';
 // import Map from 'es6-map';
 import PostCard from './PostCard';
 import Q from 'q';
@@ -24,26 +24,45 @@ export default class extends Component {
 			selected: null,
 			username: new URLSearchParams(new URL(window.location).search).get('u') || '',
 			page: 0,
-			store_reloads: 0
+			store_reloads: 0,
+			pulling_: false
 		};
+		this.username_ref = createRef();
 	}
 	
-	trig_store_reload = f => this.setState(s => ({ store_reloads: s.store_reloads + 1 }), f)
+	trig_store_reload = (u = null) => get_favs(u).then(favs => this.setState(s => ({
+		user_favs: u === null ? favs : s.user_favs.mergeWith((_, next) => next, favs)
+	})))
 	
 	componentDidMount() {
-		this.trig_store_reload(
-			_ => get_favs().then(favs => update_favs(favs.keySeq().toArray()).subscribe( // .concat(["Feve", "Kenket"])
-				_ => this.trig_store_reload()
-			))
-		);
+		this.trig_store_reload().then(_ => this.pull_all());
+		this.username_ref.current.focus();
+	}
+	pull_all() {
+		this.setState({ pulling_: true });
+		return get_favs().then(favs => update_favs(favs.keySeq().toArray()).subscribe( // .concat(["Feve", "Kenket"])
+			([u, _, __]) => this.trig_store_reload(u), // TODO consider windowing for lower frequency
+			e => this.setState({ pulling_: false }),
+			() => this.setState({ pulling_: false })
+		));
 	}
 	
 	componentDidUpdate(prevProps, prevState) {
-		if(prevState.store_reloads < this.state.store_reloads) {
-			get_favs().then(favs => this.setState({ user_favs: Map(favs) }))
+		// all actions that result in reading posts
+		if(
+			!this.state.pulling_ && (
+					(this.state.page !== prevState.page) ||
+					(prevState.selected !== this.state.selected) ||
+					(this.state.user_favs !== prevState.user_favs)
+				)
+			) {
+			// log the current page of posts as read
+			const [_, paged_posts] = this.get_current_posts();
+			flag_visited(this.state.selected, paged_posts);
 		}
 		if(prevState.selected !== this.state.selected) {
-			flag_visited(this.state.selected);
+			// flush the changes to the UI only when we switch users, so that posts for a user are frozen while you page through them so they come in a consistent order
+			this.trig_store_reload(prevState.selected);
 		}
 	}
 	
@@ -55,9 +74,10 @@ export default class extends Component {
 			_ => _,
 			e => console.log(e),
 			_ => {
-				this.setState(s => ({ username: next_user === s.username ? '' : next_user }));
-				this.handleUserSelect(next_user);
-				this.trig_store_reload(); // the end state is all that matters, so all these set_state races are fine
+				this.trig_store_reload(next_user).then(_ => {
+					this.setState(s => ({ username: next_user === s.username ? '' : next_user }));
+					this.handleUserSelect(next_user);
+				});
 			}
 		);
 		return false;
@@ -71,7 +91,7 @@ export default class extends Component {
 		if(confirm(`Remove user ${user}?`)) {
 			remove_user(user).then(_ => this.setState(s => ({
 				selected: s.selected === user ? null : s.selected,
-				user_favs: s.user_favs.remove(user) // debating between this and a full webstorage refresh
+				user_favs: s.user_favs.remove(user) // debating between this hack and making a more general diff thing for trig_store_reload
 			})))
 		}
 	}
@@ -99,25 +119,25 @@ export default class extends Component {
 		return <div id="main_root">
 				<header>
 					<h1 id="main_logotext"><span id="main_logo"></span>FA Favs</h1>
-					<span id="head_status"></span>
+					<span id="head_status" className={this.state.pulling_ ? '' : 'alpha_hidden'}><div class="lds-hourglass"></div> Pulling updates...</span>
 				</header>
 				<div id="flexroot">
 					<nav id="user_select_pane">
+						<div id="user_add_item">
+							<form action="#" onSubmit={this.handleUserSubmit} id="user_add_form">
+								<span id="user_add_button_wrapper"><button id="user_add_button"></button></span>
+								<input type="text" name="username" id="user_add_input" placeholder="Username to add" value={this.state.username} onChange={this.handleUsernameChange} ref={this.username_ref} />
+							</form>
+						</div>
 						<ul id="user_select">
-							<li key={-1} id="user_add_item">
-								<form action="#" onSubmit={this.handleUserSubmit} id="user_add_form">
-									<span id="user_add_button_wrapper"><button id="user_add_button"></button></span>
-									<input type="text" name="username" id="user_add_input" placeholder="Username to add" value={this.state.username} onChange={this.handleUsernameChange} />
-								</form>
-							</li>
-							<li key={0} className={`${this.state.selected === null ? 'selected' : ''}`} onClick={_ => this.handleUserSelect(null)}>All</li>
-							{this.state.user_favs.toArray().map(([u, posts], i) =>
+							<li key={0} className={`${this.state.selected === null ? 'selected' : ''}`} onClick={_ => this.handleUserSelect(null)}>All users</li>
+							{this.state.user_favs.entrySeq().sortBy(([k, _v]) => k).toArray().map(([u, posts], i) =>
 								<li key={u} className={`${this.state.selected === u ? 'selected' : ''}`} onClick={_ => this.handleUserSelect(u)}>
 									<span className="username">{u}</span>
-									<span className="new-count">{
-										posts.filter(p => !p.visited).length
-									}</span>
 									<a href="#" className="remove-user" onClick={e => this.handleUserRemove(e, u)}>&times;</a>
+									<span className={`new-count ${posts.filter(p => !p.visited).length > 0 ? 'nonzero' : ''}`}>{
+										posts.filter(p => !p.visited).length || ''
+									}</span>
 								</li>)}
 						</ul>
 					</nav>
@@ -127,22 +147,29 @@ export default class extends Component {
 								? 'All users'
 								: <span><a href={`//furaffinity.net/favorites/${this.state.selected}`} target="_blank">{this.state.selected}</a>'s favorites</span>
 							}</h2>
-							<span className="pagination-container">
-								<ul className="flatlist pagination-list">
-									<li className={`page-arrow ${this.state.page === 0 ? 'disabled' : ''}`} onClick={e => this.handlePageTurn(-Infinity)}>&#8606;</li>
-									<li className={`page-arrow ${this.state.page === 0 ? 'disabled' : ''}`} onClick={e => this.handlePageTurn(-1)}>&larr;</li>
-									<li>Page {this.state.page} ({this.state.page * UI_PAGE_SIZE + 1} &ndash; {Math.min(all_posts.length, (this.state.page + 1) * UI_PAGE_SIZE)} of {all_posts.length})</li>
-									<li className={`page-arrow ${this.state.page >= parseInt((all_posts.length - 1) / UI_PAGE_SIZE) ? 'disabled' : ''}`} onClick={e => this.handlePageTurn(1)}>&rarr;</li>
-									<li className={`page-arrow ${this.state.page >= parseInt((all_posts.length - 1) / UI_PAGE_SIZE) ? 'disabled' : ''}`} onClick={e => this.handlePageTurn(Infinity)}>&#8608;</li>
-								</ul>
-							</span>
+							{
+								all_posts.length === 0
+									? null
+									: <span className="pagination-container">
+										<ul className="flatlist pagination-list">
+											<li className={`page-arrow ${this.state.page === 0 ? 'disabled' : ''}`} onClick={e => this.handlePageTurn(-Infinity)}>&#8606;</li>
+											<li className={`page-arrow ${this.state.page === 0 ? 'disabled' : ''}`} onClick={e => this.handlePageTurn(-1)}>&larr;</li>
+											<li>Page {this.state.page + 1} / {parseInt(all_posts.length / UI_PAGE_SIZE)} ({this.state.page * UI_PAGE_SIZE + 1} &ndash; {Math.min(all_posts.length, (this.state.page + 1) * UI_PAGE_SIZE)} of {all_posts.length})</li>
+											<li className={`page-arrow ${this.state.page >= parseInt((all_posts.length - 1) / UI_PAGE_SIZE) ? 'disabled' : ''}`} onClick={e => this.handlePageTurn(1)}>&rarr;</li>
+											<li className={`page-arrow ${this.state.page >= parseInt((all_posts.length - 1) / UI_PAGE_SIZE) ? 'disabled' : ''}`} onClick={e => this.handlePageTurn(Infinity)}>&#8608;</li>
+										</ul>
+									</span>
+							}
 						</header>
 						<div id="post_list_wrapper">
-							<ul id="post_list" className="flatlist">
-								{paged_posts.map(p => <li key={`${p.id}-${this.state.selected || p.user}`} className="postcard-wrapper">
-									<PostCard post={p} />
-								</li>)}
-							</ul>
+							{ all_posts.length === 0
+								? <div id="no_favs_pane_filler"><div>No favorites</div></div>
+								: <ul id="post_list" className="flatlist">
+										{paged_posts.map(p => <li key={`${p.id}-${this.state.selected || p.user}`} className="postcard-wrapper">
+											<PostCard post={p} />
+										</li>)}
+									</ul>
+							}
 						</div>
 					</section>
 				</div>

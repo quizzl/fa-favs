@@ -42,7 +42,7 @@ function favs_append(u, favs) {
 			const prev_favs = r.hasOwnProperty(u) ? JSON.parse(r[u]) : [];
 			const next_favs = Map(favs.concat(prev_favs).map(f => [f.fav_id, f])).valueSeq().toArray(); // dedupe with Map, favor existing entries
 			keys[u] = JSON.stringify(next_favs);
-			const done = next_favs.length < prev_favs.length + favs.length || !r.hasOwnProperty(u);
+			const done = next_favs.length < prev_favs.length + favs.length; // || !r.hasOwnProperty(u);
 			// console.log(next_favs.length < prev_favs.length + favs.length, !r.hasOwnProperty(u));
 			return browser.storage.local.set(keys).then(_ => done)
 		})
@@ -58,15 +58,16 @@ function get_all_favs(users, iter = 0) {
 		.pipe(
 				concatMap((x, i) => i > 0 ? of(x).pipe(delay(TOTAL_RATE_LIMIT)) : of(x)), // TODO not very sophisticated, e.g. if we had multiple instances running; really we want a global rate limit based on a last_updated in webstorage. might get around to it.
 				mergeMap(([u, page]) =>
-					get_user_favs(u, page).then(next_favs => favs_append(u, next_favs).then(done => [u, done, next_favs[next_favs.length - 1]]))
+					get_user_favs(u, page).then(next_favs => favs_append(u, next_favs).then(done => [u, done, next_favs.length > 0 ? next_favs[next_favs.length - 1].fav_id : null]))
 				)
 			);
 	return updater$.pipe(
+		// need to publish and make hot: updater$ is cold so pulling on both repeated the whole chain and sent two requests
 		publish(updater_multi$ => merge(
 				updater_multi$,
 				updater_multi$.pipe(
-						reduce((acc, [u, done, page]) => (done || iter < PAGE_LIMIT ? acc : acc.concat([u, page])), []),
-						mergeMap(next_users => next_users.length > 0 ? get_all_favs(next_users, iter + 1) : EMPTY)
+						reduce((acc, [u, done, page]) => (done || iter >= (PAGE_LIMIT - 1) ? acc : acc.concat([[u, page]])), []),
+						mergeMap(next_users => (next_users.length > 0 ? get_all_favs(next_users, iter + 1) : EMPTY))
 					)
 			))
 		);
@@ -93,24 +94,25 @@ function get_all_favs(users, iter = 0) {
 	// });
 }
 
-function flag_visited_(user, prev_favs) {
+function flag_visited_(user, prev_favs, viewed_favs) {
 	const keys = {};
-	keys[user] = JSON.stringify(prev_favs.map(f => Object.assign(f, { visited: true })));
+	const viewed_fav_ids = Set(viewed_favs.map(f => f.fav_id));
+	keys[user] = JSON.stringify(prev_favs.map(f => Object.assign(f, { visited: f.visited || viewed_fav_ids.has(f.fav_id) })));
 	return browser.storage.local.set(keys);
 }
 
-export function flag_visited(user) {
+export function flag_visited(user, viewed_favs) {
 	return browser.storage.local.get(user)
 		.then(r => {
 			if(user !== null) {
 				if(r.hasOwnProperty(user))
-					flag_visited_(user, JSON.parse(r[user]))
+					flag_visited_(user, JSON.parse(r[user]), viewed_favs)
 			}
 			else {
 				const P_users = [];
-				for(const k in Object.keys(r)) {
+				for(const k of Object.keys(r)) {
 					if(r.hasOwnProperty(k)) {
-						P_users.push(flag_visited_(k, JSON.parse(r[k])));
+						P_users.push(flag_visited_(k, JSON.parse(r[k]), viewed_favs));
 					}
 				}
 				return Q.all(P_users);
