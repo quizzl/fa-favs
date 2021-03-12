@@ -1,10 +1,10 @@
 {
 	"manifest_version": 2,
-	"name": "FAF",
+	"name": "FA Favs",
 	"version": "0.0.1",
-	"permissions": ["*://*.furaffinity.net/*", "activeTab", "storage", "unlimitedStorage"],
+	"permissions": ["*://*.furaffinity.net/*", "storage", "unlimitedStorage"],
 	"browser_action": {
-		"default_title": "FAF",
+		"default_title": "FA Favs",
 		"default_icon": "icon.png"
 	},
 	"background": {
