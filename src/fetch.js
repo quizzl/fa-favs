@@ -1,7 +1,7 @@
 import { fetch } from 'whatwg-fetch';
 import { Map, Set } from 'immutable';
 import { EMPTY, from, merge, of } from 'rxjs';
-import Q from 'q';
+import Promise from 'promise-polyfill';
 import { concatMap, delay, concat, map, reduce, mergeMap, publish } from 'rxjs/operators';
 import { TOTAL_RATE_LIMIT, PER_USER_POST_LIMIT, PAGE_LIMIT, SETTINGS_KEY_PREFIX } from './consts'
 
@@ -116,7 +116,7 @@ export function flag_visited(user, viewed_favs) {
 						P_users.push(flag_visited_(k, JSON.parse(r[k]), viewed_favs));
 					}
 				}
-				return Q.all(P_users);
+				return Promise.all(P_users);
 			}
 		});
 }

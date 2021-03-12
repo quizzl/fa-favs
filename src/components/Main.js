@@ -1,7 +1,6 @@
 import { h, Component, createRef } from 'preact';
 // import Map from 'es6-map';
 import PostCard from './PostCard';
-import Q from 'q';
 import { Map, Set } from 'immutable'
 import { get_favs, update_favs, flag_visited, remove_user } from '../fetch'
 import { SETTINGS_KEY_PREFIX, UI_PAGE_SIZE, SORTBY, THEME } from '../consts'
@@ -64,7 +63,6 @@ export default class extends Component {
 			flag_visited(this.state.selected, paged_posts);
 		}
 		if(prevState.selected !== this.state.selected) {
-			console.log(prevState.selected, this.state.selected);
 			// flush the changes to the UI only when we switch users, so that posts for a user are frozen while you page through them so they come in a consistent order
 			this.trig_store_reload(prevState.selected);
 		}

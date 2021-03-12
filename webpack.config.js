@@ -18,12 +18,11 @@ module.exports = [
   },
   {
     entry: './src/browse.js',
-    mode: 'development',
+    mode: 'production',
     output: {
       path: path.resolve(__dirname),
       filename: 'public/js/browse.main.js'
     },
-    devtool: 'inline-source-map',
     module: {
       rules: [
         {test: /\.(js|jsx)$/, use: 'babel-loader', exclude: /node_modules/}
