@@ -5,6 +5,22 @@ import Q from 'q';
 import { concatMap, delay, concat, map, reduce, mergeMap, publish } from 'rxjs/operators';
 import { TOTAL_RATE_LIMIT, PER_USER_POST_LIMIT, PAGE_LIMIT, SETTINGS_KEY_PREFIX } from './consts'
 
+function promisify(f, k) {
+	const D = Q.defer();
+	f(k, x => { if(chrome.runtime.lastError) D.reject(chrome.runtime.lastError); else D.resolve(x); });
+	return D.promise;
+}
+
+export function storage_get(k) {
+	return promisify(chrome.storage.local.get.bind(chrome.storage.local), k);
+}
+export function storage_set(k) {
+	return promisify(chrome.storage.local.set.bind(chrome.storage.local), k);
+}
+export function storage_remove(k) {
+	return promisify(chrome.storage.local.remove.bind(chrome.storage.local), k);
+}
+
 // used to limit per user, but no point if we expect just one window
 function get_user_favs(user, page) {
 	return fetch(`https://www.furaffinity.net/favorites/${user}/${page === null ? '' : `${page}/next/`}`).then(s => s.text())
@@ -37,7 +53,7 @@ function get_user_favs(user, page) {
 			}); // .then(e => console.log(e) || e, e => console.log(e) || e);
 }
 function favs_append(u, favs) {
-	return browser.storage.local.get(u)
+	return storage_get(u)
 		.then(r => {
 			const keys = {};
 			const prev_favs = r.hasOwnProperty(u) ? JSON.parse(r[u]) : [];
@@ -45,7 +61,7 @@ function favs_append(u, favs) {
 			keys[u] = JSON.stringify(next_favs);
 			const done = next_favs.length < prev_favs.length + favs.length || !r.hasOwnProperty(u);
 			// console.log(next_favs.length < prev_favs.length + favs.length, !r.hasOwnProperty(u));
-			return browser.storage.local.set(keys).then(_ => done)
+			return storage_set(keys).then(_ => done)
 		})
 }
 function get_all_favs(users, iter = 0) {
@@ -99,11 +115,11 @@ function flag_visited_(user, prev_favs, viewed_favs) {
 	const keys = {};
 	const viewed_fav_ids = Set((viewed_favs || []).map(f => f.fav_id));
 	keys[user] = JSON.stringify(prev_favs.map(f => Object.assign(f, { visited: f.visited || viewed_favs === undefined || viewed_fav_ids.has(f.fav_id) })));
-	return browser.storage.local.set(keys);
+	return storage_set(keys);
 }
 
 export function flag_visited(user, viewed_favs) {
-	return browser.storage.local.get(user)
+	return storage_get(user)
 		.then(r => {
 			if(user !== null) {
 				if(r.hasOwnProperty(user))
@@ -122,11 +138,11 @@ export function flag_visited(user, viewed_favs) {
 }
 
 export function remove_user(user) {
-	return browser.storage.local.remove(user);
+	return storage_remove(user);
 }
 
 export function get_favs(keys = null) {
-	return browser.storage.local.get(keys).then(store => Map().withMutations(users => {
+	return storage_get(keys).then(store => Map().withMutations(users => {
 			for(const k of Object.keys(store)) {
 				if(store.hasOwnProperty(k) && k.indexOf(SETTINGS_KEY_PREFIX) === -1) {
 					const raw_favs = JSON.parse(store[k]);

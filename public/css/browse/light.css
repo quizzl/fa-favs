@@ -1,0 +1,74 @@
+body, html {
+	color:#444;
+	background-color:#FFF;
+}
+
+a {
+	color:#1a94bf;
+}
+a:visited {
+	color:#136a95;
+}
+
+.pseudobutton {
+	border-color:rgba(0, 0, 0, 0.03);
+}
+.pseudobutton:hover {
+	border-color:rgba(0, 0, 0, 0.05);
+	background-color:rgba(0, 0, 0, 0.02);
+}
+
+.list-separator {
+	border-top:#DDD solid 1px;
+}
+
+#main_logo {
+	background-image:url(../../img/logo-light.png);
+}
+#user_head {
+	border-right:#AAA solid 1px;
+}
+
+#user_select_pane {
+	border-right:#CCC solid 1px;
+}
+#user_select > li.user-item:hover {
+	background-color:#F6F6F6;
+}
+#user_select > li.selected {
+	background-color:#F2F2F2;
+}
+
+#user_add_input {
+	border:none;
+	border-top:#BBB solid 1px;
+	border-bottom:#BBB solid 1px;
+}
+
+
+#post_pane header {
+	border-bottom:#E4E4E4 solid 1px;
+}
+#post_pane .pagination-container {
+	border-top:#E4E4E4 solid 1px;
+}
+.page-arrow:hover {
+	background-color:#EEE;
+}
+.page-arrow.disabled:hover {
+	background-color:transparent;
+}
+#no_favs_pane_filler {
+	color:#AAA;
+}
+#sortby_wrapper {
+	color:#888;
+}
+#theme_toggle {
+	border-top:#EEE solid 1px;
+}
+
+.lds-hourglass:after {
+  border: 8px solid #AAA;
+  border-color: #AAA transparent #AAA transparent;
+}

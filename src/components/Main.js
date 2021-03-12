@@ -3,7 +3,7 @@ import { h, Component, createRef } from 'preact';
 import PostCard from './PostCard';
 import Q from 'q';
 import { Map, Set } from 'immutable'
-import { get_favs, update_favs, flag_visited, remove_user } from '../fetch'
+import { get_favs, update_favs, flag_visited, remove_user, storage_get, storage_set, storage_remove } from '../fetch'
 import { SETTINGS_KEY_PREFIX, UI_PAGE_SIZE, SORTBY, THEME } from '../consts'
 
 export default class extends Component {
@@ -34,7 +34,7 @@ export default class extends Component {
 	}
 	
 	load_settings() {
-		browser.storage.local.get(`${SETTINGS_KEY_PREFIX}_THEME`).then(s => {
+		storage_get(`${SETTINGS_KEY_PREFIX}_THEME`).then(s => {
 			if(s.hasOwnProperty(`${SETTINGS_KEY_PREFIX}_THEME`))
 				this.setState({ theme: THEME[s[`${SETTINGS_KEY_PREFIX}_THEME`]] });
 		})
@@ -70,11 +70,11 @@ export default class extends Component {
 		}
 		
 		if(prevState.theme !== this.state.theme) {
-			document.getElementById('theme_style').href = `css/browse/${this.state.theme.value}.css`;
+			document.getElementById('theme_style').href = `css/browse/${this.state.theme.stylesheet}`;
 			
 			const keys = {};
 			keys[`${SETTINGS_KEY_PREFIX}_THEME`] = this.state.theme.value;
-			browser.storage.local.set(keys);
+			storage_set(keys);
 		}
 	}
 	
