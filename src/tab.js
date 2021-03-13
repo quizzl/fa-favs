@@ -19,7 +19,7 @@ browser.browserAction.onClicked.addListener(e => {
 			browser.tabs.remove(existing_tabs.map(t => t.id)); // remove an existing tab to avoid annoying race conditions and rate-limiting risks
 			
 			tabs_fired++;
-			browser.tabs.create({ url: `public/browse.html?u=${tab_user}` }).then(t => {
+			browser.tabs.create({ url: `public/browse.html?u=${tab_user || ''}` }).then(t => {
 				tab_idxs.push(t.id)
 			}).finally(_ => tabs_finished++);
 		}

@@ -9,16 +9,23 @@ export default class extends Component {
 	constructor(props) {
 		super(props);
 		
+		const url = new URL(window.location);
+		const search_params = new URLSearchParams(url.search);
 		this.state = {
 			user_favs: Map(),
 			selected: null,
-			username: new URLSearchParams(new URL(window.location).search).get('u') || '',
+			username: search_params.get('u') || '',
 			page: 0,
 			store_reloads: 0,
 			pulling_: false,
 			sortby: SORTBY.NEW,
 			theme: THEME.DARK
 		};
+		
+		search_params.delete('u');
+		url.search = search_params;
+		window.history.replaceState({}, document.title, url);
+		
 		this.username_ref = createRef();
 	}
 	
@@ -103,6 +110,7 @@ export default class extends Component {
 		if(confirm(`Unsubscribe from ${user}?`)) {
 			remove_user(user).then(_ => this.setState(s => ({
 				selected: s.selected === user ? null : s.selected,
+				page: 0,
 				user_favs: s.user_favs.remove(user) // debating between this hack and making a more general diff thing for trig_store_reload
 			})))
 		}
