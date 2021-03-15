@@ -4,7 +4,7 @@ export const PAGE_LIMIT = 2; // max # pages to search for catchup
 export const SETTINGS_KEY_PREFIX = "__FAF_SETTINGS";
 export const UI_PAGE_SIZE = 48; // page size for this UI, match FA to curb rate limiting
 export const SORTBY = {
-	NEW: { value: 'NEW', pretty: 'Newest first' },
+	NEW: { value: 'NEW', pretty: 'Newly fav\'d first' },
 	UNVIEWED: { value: 'UNVIEWED', pretty: 'Unviewed first' }
 };
 export const THEME = {

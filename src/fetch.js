@@ -29,7 +29,6 @@ function get_user_favs(user, page) {
 				dom.head.append(baseEl); // thanks Christos Lytras @https://stackoverflow.com/a/55606029/3925507
 				
 				const section_body = dom.querySelector('.section-body');
-				console.log(section_body, dom.querySelector('#gallery-favorites'), section_body.innerText.match(/User\s+.*?was\s+not\s+found\s+in\s+our\s+database\./i));
 				if(dom.querySelector('#gallery-favorites') === null && section_body && section_body.innerText.match(/User\s+.*?was\s+not\s+found\s+in\s+our\s+database\./i))
 					return null; // user probably not found
 				

@@ -127,7 +127,7 @@ export default class extends Component {
 				else {
 					const next_user_cleaned = d[0];
 					this.trig_store_reload(next_user).then(_ => {
-						this.setState(s => ({ username: next_user === s.username ? '' : next_user }));
+						this.setState(s => ({ username: s.username === next_user ? '' : s.username }));
 						this.handleUserSelect(next_user_cleaned);
 					});
 				}
