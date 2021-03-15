@@ -245,6 +245,11 @@ export default class extends Component {
 								<li className={`page-arrow ${this.state.page >= parseInt((all_posts.length - 1) / UI_PAGE_SIZE) ? 'disabled' : ''}`} onClick={e => this.handlePageTurn(1)}>&rarr;</li>
 								<li className={`page-arrow ${this.state.page >= parseInt((all_posts.length - 1) / UI_PAGE_SIZE) ? 'disabled' : ''}`} onClick={e => this.handlePageTurn(Infinity)}>&#8608;</li>
 							</ul>
+							<span id="help_link_container">
+								<a target="_blank" href="https://www.youtube.com/watch?v=n3c9-XpAo4E" id="help_link">
+									<span>Help</span>
+								</a>
+							</span>
 						</div>
 					</section>
 				</div>

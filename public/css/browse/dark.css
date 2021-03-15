@@ -71,6 +71,11 @@ a:visited {
 	.page-arrow.disabled:hover {
 		background-color:transparent;
 	}
+
+#help_link::after {
+	border-color:#1a94bf;
+}
+
 #no_favs_pane_filler {
 	color:#5c5c5c;
 }

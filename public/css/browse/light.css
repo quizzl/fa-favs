@@ -55,9 +55,13 @@ a:visited {
 .page-arrow:hover {
 	background-color:#EEE;
 }
-.page-arrow.disabled:hover {
-	background-color:transparent;
+	.page-arrow.disabled:hover {
+		background-color:transparent;
+	}
+#help_link::after {
+	border-color:#1a94bf;
 }
+
 #no_favs_pane_filler {
 	color:#AAA;
 }
