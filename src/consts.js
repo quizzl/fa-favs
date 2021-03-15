@@ -11,3 +11,4 @@ export const THEME = {
 	DARK: { value: 'DARK', stylesheet: 'dark.css', pretty: 'Dark mode', next: 'LIGHT' },
 	LIGHT: { value: 'LIGHT',stylesheet: 'light.css', pretty: 'Light mode', next: 'DARK' }
 }
+export const ERR_TIMEOUT = 3E3;
