@@ -27,6 +27,11 @@ function get_user_favs(user, page) {
 				const baseEl = dom.createElement('base');
 				baseEl.setAttribute('href', 'https://furaffinity.net');
 				dom.head.append(baseEl); // thanks Christos Lytras @https://stackoverflow.com/a/55606029/3925507
+				
+				const section_body = dom.getQuerySelector('.section-body');
+				if(dom.getQuerySelector('#gallery-favorites') === null && section_body && section_body.innerText.indexOf('This user cannot be found.') !== -1)
+					return null; // user probably not found
+				
 				return Array.from(dom.querySelectorAll('#gallery-favorites > figure')).map(fig => {
 					const id = parseInt(fig.id.match(/^sid\-(\d+)$/i)[1]);
 					const fav_id = parseInt(fig.getAttribute('data-fav-id'));
@@ -73,8 +78,13 @@ function get_all_favs(users, iter = 0) {
 		.pipe(
 				concatMap((x, i) => i > 0 ? of(x).pipe(delay(TOTAL_RATE_LIMIT)) : of(x)), // TODO not very sophisticated, e.g. if we had multiple instances running; really we want a global rate limit based on a last_updated in webstorage. might get around to it.
 				mergeMap(([u, page]) =>
-					get_user_favs(u, page).then(next_favs => favs_append(u, next_favs).then(done => [u, done, next_favs.length > 0 ? next_favs[next_favs.length - 1].fav_id : null]))
-				)
+					get_user_favs(u, page).then(next_favs =>
+						next_favs === null
+							? of(null)
+							: favs_append(u, next_favs).then(done => [u, done, next_favs.length > 0 ? next_favs[next_favs.length - 1].fav_id : null])
+					)
+				),
+				filter(x => x !== null)
 			);
 	return updater$.pipe(
 		// need to publish and make hot: updater$ is cold so pulling on both repeated the whole chain and sent two requests
@@ -152,5 +162,5 @@ export function get_favs(keys = null) {
 	);
 }
 export function update_favs(users) {
-	return get_all_favs(users.map(u => [u, null])); // tack on fake page ids
+	return get_all_favs(users.map(u => [u.trim(), null])); // tack on fake page ids
 }
