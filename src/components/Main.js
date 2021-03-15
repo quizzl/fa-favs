@@ -121,7 +121,6 @@ export default class extends Component {
 		const next_user = this.state.username;
 		const updater$ = update_favs([next_user]);
 		updater$.pipe(startWith(null)).toPromise().then(d => {
-				console.log(d);
 				if(d === null) {
 					this.fail(new Error(`User ${next_user} does not exist.`))
 				}
@@ -239,7 +238,7 @@ export default class extends Component {
 									all_posts.length === 0
 										? null
 										: <span>
-											<div className="pagination-page-count">Page {this.state.page + 1} / {parseInt(all_posts.length / UI_PAGE_SIZE)}</div>
+											<div className="pagination-page-count">Page {this.state.page + 1} / {parseInt((all_posts.length - 1) / UI_PAGE_SIZE) + 1}</div>
 											<div className="pagination-post-count">({this.state.page * UI_PAGE_SIZE + 1} &ndash; {Math.min(all_posts.length, (this.state.page + 1) * UI_PAGE_SIZE)} of {all_posts.length})</div>
 										</span>
 								}</li>
