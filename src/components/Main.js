@@ -182,7 +182,7 @@ export default class extends Component {
 						<div id="user_add_item">
 							<form action="#" onSubmit={this.handleUserSubmit} id="user_add_form">
 								<span id="user_add_button_wrapper"><button id="user_add_button"></button></span>
-								<input type="text" name="username" id="user_add_input" placeholder="Enter username" value={this.state.username} onChange={this.handleUsernameChange} ref={this.username_ref} />
+								<input type="text" name="username" id="user_add_input" placeholder="Enter username" value={this.state.username} onInput={this.handleUsernameChange} ref={this.username_ref} />
 							</form>
 						</div>
 						<ul id="user_select">
