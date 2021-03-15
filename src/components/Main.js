@@ -88,14 +88,14 @@ export default class extends Component {
 		e.stopPropagation();
 		const next_user = this.state.username;
 		update_favs([next_user]).subscribe(
-			_ => _,
-			e => console.log(e),
-			_ => {
+			([next_user_cleaned]) => {
 				this.trig_store_reload(next_user).then(_ => {
 					this.setState(s => ({ username: next_user === s.username ? '' : next_user }));
-					this.handleUserSelect(next_user);
+					this.handleUserSelect(next_user_cleaned);
 				});
-			}
+			},
+			e => console.log(e),
+			_ => _
 		);
 		return false;
 	}

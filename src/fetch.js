@@ -28,8 +28,8 @@ function get_user_favs(user, page) {
 				baseEl.setAttribute('href', 'https://furaffinity.net');
 				dom.head.append(baseEl); // thanks Christos Lytras @https://stackoverflow.com/a/55606029/3925507
 				
-				const section_body = dom.getQuerySelector('.section-body');
-				if(dom.getQuerySelector('#gallery-favorites') === null && section_body && section_body.innerText.indexOf('This user cannot be found.') !== -1)
+				const section_body = dom.querySelector('.section-body');
+				if(dom.querySelector('#gallery-favorites') === null && section_body && section_body.innerText.indexOf('This user cannot be found.') !== -1)
 					return null; // user probably not found
 				
 				return Array.from(dom.querySelectorAll('#gallery-favorites > figure')).map(fig => {
