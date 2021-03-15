@@ -1,14 +1,12 @@
 import { fetch } from 'whatwg-fetch';
 import { Map, Set } from 'immutable';
 import { EMPTY, from, merge, of } from 'rxjs';
-import Q from 'q';
-import { concatMap, delay, concat, map, reduce, mergeMap, publish } from 'rxjs/operators';
+import Promise from 'promise-polyfill';
+import { concatMap, delay, concat, map, reduce, filter, mergeMap, publish } from 'rxjs/operators';
 import { TOTAL_RATE_LIMIT, PER_USER_POST_LIMIT, PAGE_LIMIT, SETTINGS_KEY_PREFIX } from './consts'
 
 function promisify(f, k) {
-	const D = Q.defer();
-	f(k, x => { if(chrome.runtime.lastError) D.reject(chrome.runtime.lastError); else D.resolve(x); });
-	return D.promise;
+	return new Promise((resolve, reject) => f(k, x => { if(chrome.runtime.lastError) reject(chrome.runtime.lastError); else resolve(x); }));
 }
 
 export function storage_get(k) {
@@ -132,7 +130,7 @@ export function flag_visited(user, viewed_favs) {
 						P_users.push(flag_visited_(k, JSON.parse(r[k]), viewed_favs));
 					}
 				}
-				return Q.all(P_users);
+				return Promise.all(P_users);
 			}
 		});
 }

@@ -7,7 +7,7 @@ chrome.browserAction.onClicked.addListener(e => {
 		if(tabs_fired === tabs_finished) {
 			const tab_user = (() => {
 				try {
-					const active_fa = active_tabs.map(t => new URL(t.url)).filter(u => u.hostname.match(/furaffinity.net$/i))[0];
+					const active_fa = active_tabs.filter(t => t.highlighted).map(t => new URL(t.url)).filter(u => u.hostname.match(/furaffinity.net$/i))[0];
 					const user = active_fa.pathname.match(/^\/(favorites|user|gallery|scraps|journals)\/([^\/]+)/i);
 					return user && user[2];
 				}
