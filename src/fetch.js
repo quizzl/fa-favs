@@ -2,7 +2,7 @@ import { fetch } from 'whatwg-fetch';
 import { Map, Set } from 'immutable';
 import { EMPTY, from, merge, of } from 'rxjs';
 import Promise from 'promise-polyfill';
-import { concatMap, delay, concat, map, reduce, filter, mergeMap, publish } from 'rxjs/operators';
+import { concatMap, delay, concat, map, reduce, filter, mergeMap, mergeAll, publish } from 'rxjs/operators';
 import { TOTAL_RATE_LIMIT, PER_USER_POST_LIMIT, PAGE_LIMIT, SETTINGS_KEY_PREFIX } from './consts'
 
 function promisify(f, k) {
@@ -29,8 +29,10 @@ function get_user_favs(user, page) {
 				dom.head.append(baseEl); // thanks Christos Lytras @https://stackoverflow.com/a/55606029/3925507
 				
 				const section_body = dom.querySelector('.section-body');
-				if(dom.querySelector('#gallery-favorites') === null && section_body && section_body.innerText.match(/User\s+.*?was\s+not\s+found\s+in\s+our\s+database\./i))
+				if(dom.querySelector('#gallery-favorites') === null && section_body && section_body.innerText.match(/User\s+.*?was\s+not\s+found\s+in\s+our\s+database\./i)) {
+					// remove_user(user);
 					return null; // user probably not found
+				}
 				
 				return Array.from(dom.querySelectorAll('#gallery-favorites > figure')).map(fig => {
 					const id = parseInt(fig.id.match(/^sid\-(\d+)$/i)[1]);
@@ -62,43 +64,50 @@ function favs_append(u, favs) {
 			const prev_favs = r.hasOwnProperty(u) ? JSON.parse(r[u]) : [];
 			const next_favs = Map(favs.concat(prev_favs).map(f => [f.fav_id, f])).valueSeq().toArray(); // dedupe with Map, favor existing entries
 			keys[u] = JSON.stringify(next_favs);
-			const done = next_favs.length < prev_favs.length + favs.length || !r.hasOwnProperty(u);
+			const done = next_favs.length < prev_favs.length + favs.length; // || !r.hasOwnProperty(u) // commented condition was what limited the initial add to only the first page of favorites, made explicit later
 			// console.log(next_favs.length < prev_favs.length + favs.length, !r.hasOwnProperty(u));
 			return storage_set(keys).then(_ => done)
 		})
 }
-function get_all_favs(users, iter = 0) {
+function get_all_favs(users, adding_=false, iter = 0) {
 	
 	// const initial = get_favs(.map(([u, page]) => u))
 	// 	.then(m => m.mergeWith(
 	// 			(favs, [_, page]) => [favs, page],
 	// 			users.map(([u, page]) => [u, [page, []]])
 	// 		).toArray());
+	// console.log(users);
 	const updater$ = from(users)
 		.pipe(
-				concatMap((x, i) => i > 0 ? of(x).pipe(delay(TOTAL_RATE_LIMIT)) : of(x)), // TODO not very sophisticated, e.g. if we had multiple instances running; really we want a global rate limit based on a last_updated in webstorage. might get around to it.
-				mergeMap(([u, page]) =>
+				concatMap((x, i) => (i > 0 ? of(x).pipe(delay(TOTAL_RATE_LIMIT)) : of(x))), // TODO not very sophisticated, e.g. if we had multiple instances running; really we want a global rate limit based on a last_updated in webstorage. might get around to it.
+				mergeMap(([u, page]) => // mergeMap here doesn't flatten streams, just Stream<Promise<T>> -> Stream<T>
 					get_user_favs(u, page).then(next_favs =>
 						next_favs && // pass through nulls
 						favs_append(u, next_favs)
 							.then(done => [
 								u,
-								done,
+								done || adding_, // if adding a new user, don't continue
 								next_favs.length > 0
 									? next_favs[next_favs.length - 1].fav_id
 									: null
 							])
 					)
 				),
-				filter(x => x !== null)
+				// filter(x => x !== null)
 			);
 	return updater$.pipe(
 		// need to publish and make hot: updater$ is cold so pulling on both repeated the whole chain and sent two requests
 		publish(updater_multi$ => merge(
 				updater_multi$,
 				updater_multi$.pipe(
-						reduce((acc, [u, done, page]) => (done || iter >= (PAGE_LIMIT - 1) ? acc : acc.concat([[u, page]])), []),
-						mergeMap(next_users => (next_users.length > 0 ? get_all_favs(next_users, iter + 1) : EMPTY))
+						reduce((acc, u_) => {
+							if(u_ !== null) {
+								const [u, done, page] = u_
+								return (done || iter >= (PAGE_LIMIT - 1) ? acc : acc.concat([[u, page]]));
+							}
+							else return acc;
+						}, []),
+						mergeMap(next_users => (next_users.length > 0 ? get_all_favs(next_users, adding_, iter + 1) : EMPTY))
 					)
 			))
 		);
@@ -168,5 +177,24 @@ export function get_favs(keys = null) {
 	);
 }
 export function update_favs(users) {
-	return get_all_favs(users.map(u => [u.trim(), null])); // tack on fake page ids
+	return get_all_favs(users.map(u => [u.trim(), null]), false); // tack on fake page ids
+}
+export function add_users(users) {
+	const users_filt = users.map(u => u.trim());
+	const P$ = storage_get(users_filt).then(store => {
+		for(const k of Object.keys(store)) {
+			if(store.hasOwnProperty(k)) {
+				users_filt.splice(users_filt.indexOf(k), 1);
+			}
+		}
+		
+		const U = {}
+		for(const u of users_filt) {
+			U[u] = JSON.stringify([])
+		}
+		// storage_set(U); // shuttle new empty usernames into the user list
+			
+		return get_all_favs(users_filt.map(u => [u, null]), true);
+	});
+	return from(P$).pipe(mergeAll());
 }

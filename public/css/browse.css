@@ -48,7 +48,7 @@ ul {
 	}
 		#fails_list > li {
 			max-width:50%;
-			display:inline-block;
+			display:block;
 			background-color:#c34848;
 			border:#922828 solid 1px;
 			border-radius:0.2em;

@@ -1,9 +1,10 @@
 import { h, Component, createRef } from 'preact';
 // import Map from 'es6-map';
-import { startWith } from 'rxjs/operators';
+import { startWith, mergeMap, finalize } from 'rxjs/operators';
+import { EMPTY, from, zip } from 'rxjs'
 import PostCard from './PostCard';
 import { Map, Set } from 'immutable'
-import { get_favs, update_favs, flag_visited, remove_user, storage_get, storage_set, storage_remove } from '../fetch'
+import { get_favs, update_favs, flag_visited, remove_user, storage_get, storage_set, storage_remove, add_users } from '../fetch'
 import { SETTINGS_KEY_PREFIX, UI_PAGE_SIZE, SORTBY, THEME, ERR_TIMEOUT } from '../consts'
 
 export default class extends Component {
@@ -18,10 +19,13 @@ export default class extends Component {
 			username: search_params.get('u') || '',
 			page: 0,
 			store_reloads: 0,
-			pulling_: false,
+			pulling: 0,
+			pulled: 0,
+			// updater$: EMPTY,
 			sortby: SORTBY.NEW,
 			theme: THEME.DARK,
-			fails: Map()
+			fails: Map(),
+			fails_id: 0
 		};
 		
 		search_params.delete('u');
@@ -39,9 +43,9 @@ export default class extends Component {
 	
 	fail = err => {
 		this.setState(s => {
-			const key = s.fails.size;
+			const key = s.fails_id;
 			setTimeout(_ => this.setState(s_ => ({ fails: s_.fails.remove(key) })), ERR_TIMEOUT);
-			return { fails: s.fails.set(key, err) };
+			return { fails: s.fails.set(key, err), fails_id: key + 1 };
 		});
 	}
 	
@@ -57,14 +61,14 @@ export default class extends Component {
 	}
 	
 	pull_all() {
-		this.setState({ pulling_: true });
+		this.setState(s => ({ pulling: s.pulling + 1 }));
 		return get_favs().then(favs => update_favs(favs.keySeq().toArray()).subscribe( // .concat(["Feve", "Kenket"])
-			([u, _, __]) => this.trig_store_reload(u), // TODO consider windowing for lower frequency
+			(u_) => u_ === null ? null : this.trig_store_reload(u_[0]), // TODO consider windowing for lower frequency
 			e => {
+				this.setState(s => ({ pulled: s.pulled + 1 }))
 				this.fail(e);
-				this.setState({ pulling_: false })
 			},
-			() => this.setState({ pulling_: false })
+			() => this.setState(s => ({ pulled: s.pulled + 1 }))
 		));
 	}
 	
@@ -75,6 +79,7 @@ export default class extends Component {
 					: this.state.user_favs.toArray()
 						.reduce((acc, [u, favs]) => acc.concat(favs.map(f => Object.assign(f, { user: u }))), [])
 			)
+			// .map(a => Object.assign(a, { visited: !Math.round(Math.random() * 0.52) }))
 			.sort((a, b) => {
 				switch(this.state.sortby) {
 					case SORTBY.NEW:
@@ -90,7 +95,7 @@ export default class extends Component {
 	componentDidUpdate(prevProps, prevState) {
 		// all actions that result in reading posts
 		if(
-			!this.state.pulling_ && (
+			this.state.pulling === this.state.pulled && (
 					(this.state.page !== prevState.page)
 					|| (prevState.selected !== this.state.selected)
 					|| (prevState.sortby !== this.state.sortby)
@@ -118,20 +123,30 @@ export default class extends Component {
 	handleUserSubmit = e => {
 		e.preventDefault();
 		e.stopPropagation();
-		const next_user = this.state.username;
-		const updater$ = update_favs([next_user]);
-		updater$.pipe(startWith(null)).toPromise().then(d => {
-				if(d === null) {
-					this.fail(new Error(`User ${next_user} does not exist.`))
-				}
-				else {
-					const next_user_cleaned = d[0];
-					this.trig_store_reload(next_user).then(_ => {
-						this.setState(s => ({ username: s.username === next_user ? '' : s.username }));
-						this.handleUserSelect(next_user_cleaned);
-					});
-				}
-			}, this.fail);
+		const raw_username = this.state.username;
+		const next_users = Array.from(this.state.username.matchAll(/[\w_\-]+/g), a => a[0]) // split(/[ ,]/).map(u => u.trim()).filter(s => s !== '');
+		this.setState(s => ({ username: s.username === raw_username ? '' : s.username, pulling: s.pulling + 1 }));
+		
+		const updater$ = zip(from(next_users), add_users(next_users));
+		updater$.pipe(
+			mergeMap(([next_user, d]) => {
+					// console.log([next_user, d]);
+					if(d === null) {
+						this.fail(new Error(`User ${next_user} does not exist.`));
+						return EMPTY;
+					}
+					else {
+						const next_user_cleaned = d[0];
+						return this.trig_store_reload(next_user_cleaned).then(_ => {
+							this.handleUserSelect(next_user_cleaned);
+						});
+					}
+				}),
+			finalize(_ => this.setState(s => ({ pulled: s.pulled + 1 }))),
+		).subscribe(null, e => console.log(e) || this.fail(e), null);
+		// this.setState(s => ({
+		// 	updater$: s.pipe()
+		// }))
 		return false;
 	}
 	
@@ -182,7 +197,7 @@ export default class extends Component {
 						<div id="user_add_item">
 							<form action="#" onSubmit={this.handleUserSubmit} id="user_add_form">
 								<span id="user_add_button_wrapper"><button id="user_add_button"></button></span>
-								<input type="text" name="username" id="user_add_input" placeholder="Enter username" value={this.state.username} onInput={this.handleUsernameChange} ref={this.username_ref} />
+								<input type="text" name="username" id="user_add_input" placeholder="Enter username[s]" value={this.state.username} onInput={this.handleUsernameChange} ref={this.username_ref} />
 							</form>
 						</div>
 						<ul id="user_select">
@@ -218,7 +233,7 @@ export default class extends Component {
 									{Object.values(SORTBY).map(v => <option value={v.value}>{v.pretty}</option>)}
 								</select>
 							</span>
-							<span id="head_status" className={this.state.pulling_ ? '' : 'alpha_hidden'}><div class="lds-hourglass"></div> Pulling updates...</span>
+							<span id="head_status" className={this.state.pulling > this.state.pulled ? '' : 'alpha_hidden'}><div class="lds-hourglass"></div> Pulling updates...</span>
 						</header>
 						<div id="post_list_wrapper">
 							{ all_posts.length === 0
